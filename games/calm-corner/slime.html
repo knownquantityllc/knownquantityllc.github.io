@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="../../shared/web-audio-unlock.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#121019">
+<title>Slime</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="kq-i18n-fonts.css">
+<script src="kq-i18n.js"></script>
+<script src="i18n.js"></script>
+<script src="ads.js"></script>
+<style>
+/* Layout: one full-screen canvas toy; a slim top bar (menu, name, music, sound, vibration); action pills along the bottom. Single cozy dark look by choice. */
+:root{
+  --bg:#121019; --fg:#f4f0ff; --muted:#a39dbf; --accent:#c9a8ff; --ink:#17121f; --bar:rgba(24,20,34,.88); --line:rgba(255,255,255,.12);
+  --display:'Rubik Mono One',Impact,'Arial Black',sans-serif; --body:'Rubik',system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--body);
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overscroll-behavior:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.top{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;z-index:3;pointer-events:none;
+  padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-bottom:6px;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.top>*{pointer-events:auto}
+.title{flex:1;min-width:0;font-family:var(--display);font-size:13px;letter-spacing:-.02em;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 0 rgba(0,0,0,.35);pointer-events:none}
+.ib{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--bar);color:var(--fg);display:grid;place-items:center;cursor:pointer;padding:0;text-decoration:none;box-sizing:border-box}
+.ib svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ib.off{opacity:.42}
+.ib.off .on-only{display:none}
+.ib:not(.off) .off-only{display:none}
+.bottom{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:10px;z-index:3;pointer-events:none;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px);padding-top:6px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bottom>*{pointer-events:auto}
+.pill{font:600 14px var(--body);color:var(--ink);background:var(--accent);border:0;border-radius:999px;padding:11px 18px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.35);white-space:nowrap}
+.pill.ghost{background:var(--bar);color:var(--fg);box-shadow:none;border:1px solid var(--line)}
+.pill:active{transform:translateY(2px)}
+.pill.pulse{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.07)}}
+.ib:focus-visible,.pill:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.hint{position:fixed;left:0;right:0;z-index:2;text-align:center;font-size:14px;color:var(--fg);opacity:.75;pointer-events:none;transition:opacity .8s;
+  top:calc(env(safe-area-inset-top,0px) + 64px);padding-inline:24px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.hint.gone{opacity:0}
+.toast{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:4;font:700 18px var(--body);color:var(--fg);background:var(--bar);border:1px solid var(--line);
+  border-radius:999px;padding:10px 18px;pointer-events:none;animation:toast 1.8s ease forwards;white-space:nowrap}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,-30%)}12%{opacity:1;transform:translate(-50%,-50%)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%)}}
+@media (prefers-reduced-motion:reduce){.pill.pulse{animation:none}.toast{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="top">
+  <a class="ib" id="home" href="index.html" aria-label="Back to menu" title="Menu"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a>
+  <div class="title">Slime</div>
+  <button class="ib" id="musicBtn" aria-label="Music" title="Music"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/><path class="off-only" d="M3 3l18 18"/></svg></button>
+  <button class="ib" id="soundBtn" aria-label="Sound" title="Sound"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="on-only" d="M16 9a4 4 0 0 1 0 6"/><path class="on-only" d="M18.5 6.5a8 8 0 0 1 0 11"/><path class="off-only" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+  <button class="ib" id="hapticBtn" aria-label="Vibration" title="Vibration"><svg viewBox="0 0 24 24"><rect x="8" y="4" width="8" height="16" rx="2"/><path class="on-only" d="M4 9v6M20 9v6"/><path class="off-only" d="M3 3l18 18"/></svg></button>
+</div>
+<div class="hint" id="hint">Grab the edge to stretch it. Press the middle to squish.</div>
+<div class="bottom" id="actions"></div>
+<script>
+(() => {
+'use strict';
+if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r){
+  r = Math.min(typeof r === 'number' ? r : 0, w / 2, h / 2); this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); };
+const $ = id => document.getElementById(id);
+const cv = $('c'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, ready = false, dirty = true;   // dirty: redraw on the next frame even if the toy is at rest
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('calm_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v){ try { localStorage.setItem('calm_' + k, JSON.stringify(v)); } catch (e) {} }
+};
+let soundOn = store.get('sound', true), musicOn = store.get('music', true), hapticsOn = store.get('haptics', true);
+
+// ---------- audio: everything is synthesized, nothing is loaded ----------
+let ac = null, sfxBus = null, musicBus = null, noiseBuf = null;
+function audio(){
+  try {
+    if (!ac) {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      if (window.Ads && Ads.trackAudio) Ads.trackAudio(ac);
+      const master = ac.createGain(); master.connect(ac.destination);
+      sfxBus = ac.createGain(); sfxBus.gain.value = soundOn ? 1 : 0; sfxBus.connect(master);
+      musicBus = ac.createGain(); musicBus.gain.value = soundOn && musicOn ? 1 : 0; musicBus.connect(master);
+    }
+    if (ac.state === 'suspended' && !document.hidden && !(window.Ads && Ads.showing)) ac.resume();
+    return ac;
+  } catch (e) { return null; }
+}
+function noise(){
+  if (noiseBuf) return noiseBuf;
+  const n = ac.sampleRate * 2; noiseBuf = ac.createBuffer(1, n, ac.sampleRate);
+  const d = noiseBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  return noiseBuf;
+}
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+let lastBuzz = 0;
+const C = {
+  ctx, get W(){ return W; }, get H(){ return H; }, get DPR(){ return DPR; },
+  top: 60, bottom: 70,
+  get soundOn(){ return soundOn; }, get hapticsOn(){ return hapticsOn; },
+  mtof, audio,
+  tone(f, dur, type = 'sine', vol = 0.1, slideTo = null, delay = 0, music = false){
+    if (!soundOn) return; const c = audio(); if (!c) return;
+    const t = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(music ? musicBus : sfxBus); o.start(t); o.stop(t + dur + 0.05);
+  },
+  noise(dur, vol = 0.1, type = 'bandpass', freq = 2000, Q = 1, delay = 0, freqTo = null){
+    if (!soundOn) return; const c = audio(); if (!c) return;
+    const t = c.currentTime + delay, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = noise(); f.type = type; f.frequency.setValueAtTime(freq, t); if (freqTo) f.frequency.exponentialRampToValueAtTime(freqTo, t + dur); f.Q.value = Q;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f).connect(g).connect(sfxBus); s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.05);
+  },
+  // A continuous noise texture (sand, squelch, rain) whose loudness and brightness the toy steers every frame.
+  texture(o){
+    let n = null;
+    const make = () => {
+      if (n) return n; const c = audio(); if (!c) return null;
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = noise(); s.loop = true; f.type = o.type || 'lowpass'; f.frequency.value = o.freq || 800; f.Q.value = o.Q || 0.7; g.gain.value = 0;
+      s.connect(f).connect(g).connect(o.music ? musicBus : sfxBus); s.start(0, Math.random()); n = { s, f, g }; return n;
+    };
+    return {
+      set(level, freq){ if (!ac && level <= 0) return; const x = make(); if (!x) return; const t = ac.currentTime;
+        x.g.gain.setTargetAtTime(Math.max(0, level) * (o.vol || 0.2), t, o.smooth || 0.05); if (freq) x.f.frequency.setTargetAtTime(freq, t, 0.06); }
+    };
+  },
+  buzz(p, minGap = 35){
+    if (!hapticsOn) return; const now = performance.now(); if (now - lastBuzz < minGap) return; lastBuzz = now;
+    try { if (window.Haptic) Haptic.play(p); else if (navigator.vibrate) navigator.vibrate(p); } catch (e) {}   // phone's haptic engine in the app (ads.js)
+  },
+  rng(seed){ let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; },
+  canvas(w, h){ const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; },
+  toast(text){ const d = document.createElement('div'); d.className = 'toast'; d.textContent = text; document.body.appendChild(d); setTimeout(() => d.remove(), 1900); },
+  hideHint(){ $('hint').classList.add('gone'); },
+  actions(list){
+    const box = $('actions'); box.innerHTML = '';
+    const els = list.map(a => { const b = document.createElement('button'); b.className = 'pill' + (a.ghost ? ' ghost' : ''); b.textContent = a.label; if (a.id) b.id = a.id;
+      b.addEventListener('click', () => { audio(); Ambient.start(); a.onClick(b); dirty = true; }); box.appendChild(b); return b; });
+    requestAnimationFrame(measure); return els;
+  }
+};
+
+// ---------- ambient pad, very quiet, in E minor or B minor ----------
+// Each chord is [bass root, pitch classes above it]. The root sits alone in the bass; the three voices above are voiced
+// as the inversion nearest the chord before (the last chord leads back into the first), so the pad glides instead of
+// jumping and nothing but the bass goes below E3. The loop starts on the home chord, root doubled, and ends on VII, which leads home.
+const PADS = {
+  em: [[52, [4, 7, 11]], [48, [4, 7, 11]], [43, [11, 2, 4]], [50, [6, 9, 4]]],   // Em, Cmaj7, G6, D(add9)
+  bm: [[47, [11, 2, 6]], [43, [11, 2, 6]], [50, [6, 9, 4]], [45, [1, 4, 11]]]    // Bm, Gmaj7, D(add9), A(add9)
+};
+// Of every inversion/octave of the chord inside [lo, hi], pick the one closest to the last voicing.
+function voiceLead(prev, pcs, lo, hi){
+  const n = pcs.length, pc = m => ((m % 12) + 12) % 12; let best = null, bs = Infinity;
+  for (let inv = 0; inv < n; inv++) {
+    const ord = pcs.slice(inv).concat(pcs.slice(0, inv));
+    for (let b = lo; b <= hi; b++) {
+      if (pc(b) !== pc(ord[0])) continue;
+      const v = [b]; for (let i = 1; i < n; i++) { let m = v[i - 1] + 1; while (pc(m) !== pc(ord[i])) m++; v.push(m); }
+      if (v[n - 1] > hi) break;
+      let s = 0;
+      if (prev && prev.length) { for (const x of v) s += Math.min(...prev.map(p => Math.abs(p - x))); for (const p of prev) s += 0.5 * Math.min(...v.map(x => Math.abs(p - x))); }
+      else s = Math.abs((v[0] + v[n - 1]) / 2 - (lo + hi) / 2);
+      if (s < bs) { bs = s; best = v; }
+    }
+  }
+  if (best) return best;
+  let b = lo; while (pc(b) !== pc(pcs[0])) b++; const v = [b]; for (let i = 1; i < n; i++) { let m = v[i - 1] + 1; while (pc(m) !== pc(pcs[i])) m++; v.push(m); } return v;
+}
+const voicedPads = {};
+function padChords(key){   // voiced once per key; three passes make the loop seam as smooth as the rest
+  if (voicedPads[key]) return voicedPads[key];
+  let prev = null, out = [];
+  for (let pass = 0; pass < 3; pass++) { out = []; for (const [root, pcs] of PADS[key]) { prev = voiceLead(prev, pcs, 52, 72); out.push([root, ...prev]); } }
+  return (voicedPads[key] = out);
+}
+const Ambient = (() => {
+  let timer = null, step = 0, chimeTimer = null, cur = null;
+  function chord(notes, t){
+    for (const m of notes) {
+      const f = mtof(m), o = ac.createOscillator(), o2 = ac.createOscillator(), lp = ac.createBiquadFilter(), g = ac.createGain();
+      o.type = 'sine'; o2.type = 'triangle'; o.frequency.value = f; o2.frequency.value = f * 1.003;
+      lp.type = 'lowpass'; lp.frequency.value = 1300;
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.016, t + 2.6); g.gain.setValueAtTime(0.016, t + 6.8); g.gain.linearRampToValueAtTime(0.0001, t + 9.8);
+      o.connect(lp); o2.connect(lp); lp.connect(g).connect(musicBus); o.start(t); o2.start(t); o.stop(t + 10); o2.stop(t + 10);
+    }
+  }
+  function chime(){
+    if (!ac || !musicOn || !soundOn) return;
+    const pcs = new Set((cur || padChords(TOY.pad || 'em')[0]).map(x => x % 12)), tones = [];   // a tone of the chord that's sounding
+    for (let n = 74; n <= 90; n++) if (pcs.has(n % 12)) tones.push(n);
+    const m = tones[Math.floor(Math.random() * tones.length)];
+    C.tone(mtof(m), 2.6, 'sine', 0.035, null, 0, true); C.tone(mtof(m) * 2.76, 0.9, 'sine', 0.008, null, 0, true);
+    chimeTimer = setTimeout(chime, 3500 + Math.random() * 5500);
+  }
+  function tick(){ if (!ac) return; const prog = padChords(TOY.pad || 'em'); cur = prog[step % prog.length]; chord(cur, ac.currentTime + 0.1); step++; }
+  return {
+    start(){
+      if (timer || !musicOn || !soundOn || document.hidden) return; if (!audio()) return;
+      tick(); timer = setInterval(tick, 8000);
+      if (TOY.chimes && !chimeTimer) chimeTimer = setTimeout(chime, 1500);
+    },
+    stop(){ clearInterval(timer); timer = null; clearTimeout(chimeTimer); chimeTimer = null; }
+  };
+})();
+
+function applyToggles(){
+  $('musicBtn').classList.toggle('off', !musicOn); $('soundBtn').classList.toggle('off', !soundOn); $('hapticBtn').classList.toggle('off', !hapticsOn);
+  $('musicBtn').setAttribute('aria-pressed', String(musicOn)); $('soundBtn').setAttribute('aria-pressed', String(soundOn)); $('hapticBtn').setAttribute('aria-pressed', String(hapticsOn));
+  if (ac) { sfxBus.gain.setTargetAtTime(soundOn ? 1 : 0, ac.currentTime, 0.05); musicBus.gain.setTargetAtTime(soundOn && musicOn ? 1 : 0, ac.currentTime, 0.2); }
+  if (soundOn && musicOn) Ambient.start(); else Ambient.stop();
+}
+$('musicBtn').addEventListener('click', () => { musicOn = !musicOn; store.set('music', musicOn); audio(); applyToggles(); });
+$('soundBtn').addEventListener('click', () => { soundOn = !soundOn; store.set('sound', soundOn); audio(); applyToggles(); });
+$('hapticBtn').addEventListener('click', () => { hapticsOn = !hapticsOn; store.set('haptics', hapticsOn); applyToggles(); if (hapticsOn) C.buzz(20, 0); });
+
+// Slime: a glossy soft-body blob. Grab the edge to stretch it, press the middle to squish it, let go and it wobbles back.
+const TOY = (() => {
+  const COLORS = [
+    { name: 'Lavender', a: '#e2d4ff', b: '#9a78f2', c: '#6f4fd0', glitter: false },
+    { name: 'Galaxy', a: '#7a6ad8', b: '#33277a', c: '#150f38', glitter: true },
+    { name: 'Mint', a: '#d6fff0', b: '#68d9b0', c: '#2f9d7a', glitter: false },
+    { name: 'Peach', a: '#ffe6d4', b: '#ffa77a', c: '#e0703f', glitter: false },
+    { name: 'Bubblegum', a: '#ffe0f0', b: '#ff86c2', c: '#d94d97', glitter: true },
+    { name: 'Lime fizz', a: '#f6ffd0', b: '#b5e655', c: '#74a821', glitter: true }
+  ];
+  const N = 44;
+  let col = 0, pts = [], cx = 0, cy = 0, R = 100, A0 = 1, grabs = new Map(), press = null, squash = 0, sqv = 0;
+  let glitter = [], bubbles = [], tex = null, lastPop = 0, maxStretch = 0, stretches = 0, presses = 0;
+
+  let backdrop = null;   // background + spotlight, drawn once per layout instead of every frame
+  let drawn = null;      // the outline as it was last drawn, so a settled slime isn't redrawn for nothing
+  function build(){
+    const avail = C.H - C.top - C.bottom;
+    cx = C.W / 2; cy = C.top + avail * 0.52; R = Math.max(60, Math.min(C.W * 0.33, avail * 0.28, 170));
+    backdrop = C.canvas(C.W * C.DPR, C.H * C.DPR); const bgc = backdrop.getContext('2d'); bgc.setTransform(C.DPR, 0, 0, C.DPR, 0, 0);
+    const bg = bgc.createLinearGradient(0, 0, 0, C.H); bg.addColorStop(0, '#1b1530'); bg.addColorStop(1, '#0e0b18');
+    bgc.fillStyle = bg; bgc.fillRect(0, 0, C.W, C.H);
+    const spot = bgc.createRadialGradient(cx, cy, 10, cx, cy, Math.max(C.W, C.H) * 0.6);
+    spot.addColorStop(0, 'rgba(160,130,255,0.14)'); spot.addColorStop(1, 'rgba(0,0,0,0)'); bgc.fillStyle = spot; bgc.fillRect(0, 0, C.W, C.H);
+    pts = [];
+    for (let i = 0; i < N; i++) {
+      const a = i / N * Math.PI * 2, rx = Math.cos(a) * R * 1.12, ry = Math.sin(a) * R * 0.86;
+      pts.push({ x: cx + rx, y: cy + ry, vx: 0, vy: 0, rx, ry });
+    }
+    A0 = area();
+    glitter = Array.from({ length: 70 }, () => ({ a: Math.random() * Math.PI * 2, f: Math.sqrt(Math.random()) * 0.88, p: Math.random() * 6, s: 0.8 + Math.random() * 1.6 }));
+    bubbles = Array.from({ length: 7 }, () => ({ a: Math.random() * Math.PI * 2, f: 0.2 + Math.random() * 0.6, s: 2 + Math.random() * 5 }));
+  }
+  function area(){ let s = 0; for (let i = 0; i < N; i++) { const p = pts[i], q = pts[(i + 1) % N]; s += p.x * q.y - q.x * p.y; } return Math.abs(s) / 2; }
+  function centroid(){ let x = 0, y = 0; for (const p of pts) { x += p.x; y += p.y; } return { x: x / N, y: y / N }; }
+  function inside(x, y){
+    let c = false;
+    for (let i = 0, j = N - 1; i < N; j = i++) { const a = pts[i], b = pts[j]; if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) c = !c; }
+    return c;
+  }
+  function edgeDist(x, y){ let m = Infinity; for (const p of pts) m = Math.min(m, Math.hypot(p.x - x, p.y - y)); return m; }
+  function step(k){
+    const A = area(), pressure = (A0 - A) / A0;
+    for (let i = 0; i < N; i++) {
+      const p = pts[i], pv = pts[(i - 1 + N) % N], nx = pts[(i + 1) % N];
+      const tx = cx + p.rx * (1 + squash * 0.2), ty = cy + p.ry * (1 - squash * 0.24) + squash * R * 0.14;
+      let fx = (tx - p.x) * 0.011, fy = (ty - p.y) * 0.011;
+      fx += ((pv.x + nx.x) / 2 - p.x) * 0.09; fy += ((pv.y + nx.y) / 2 - p.y) * 0.09;
+      const ox = nx.y - pv.y, oy = -(nx.x - pv.x), ol = Math.hypot(ox, oy) || 1;
+      fx += ox / ol * pressure * 7; fy += oy / ol * pressure * 7;
+      p.vx = (p.vx + fx * k) * Math.pow(0.91, k); p.vy = (p.vy + fy * k) * Math.pow(0.91, k);
+    }
+    for (const g of grabs.values()) for (const h of g.hold) {
+      const p = pts[h.i], tx = g.x + h.ox * (1 - h.w * 0.85), ty = g.y + h.oy * (1 - h.w * 0.85);
+      p.vx += (tx - p.x) * 0.2 * h.w * k; p.vy += (ty - p.y) * 0.2 * h.w * k;
+    }
+    for (const p of pts) { p.x += p.vx * k; p.y += p.vy * k; }
+  }
+  function path(c){
+    c.beginPath();
+    const a = pts[N - 1], b = pts[0]; c.moveTo((a.x + b.x) / 2, (a.y + b.y) / 2);
+    for (let i = 0; i < N; i++) { const p = pts[i], q = pts[(i + 1) % N]; c.quadraticCurveTo(p.x, p.y, (p.x + q.x) / 2, (p.y + q.y) / 2); }
+    c.closePath();
+  }
+  function along(angle, f, ctr){   // a point inside the blob that moves with its deformation
+    const t = ((angle / (Math.PI * 2)) % 1 + 1) % 1 * N, i = Math.floor(t), u = t - i, p = pts[i % N], q = pts[(i + 1) % N];
+    return { x: ctr.x + ((p.x + (q.x - p.x) * u) - ctr.x) * f, y: ctr.y + ((p.y + (q.y - p.y) * u) - ctr.y) * f };
+  }
+  function jiggle(){
+    pts.forEach((p, i) => { const a = i / N * Math.PI * 2, s = Math.sin(i * 0.9) * 4 + 3; p.vx += Math.cos(a) * s; p.vy += Math.sin(a) * s; });
+    C.noise(0.3, 0.16, 'lowpass', 600, 8, 0, 200); C.tone(200, 0.25, 'sine', 0.06, 140); C.buzz([10, 40, 10], 0);
+  }
+  return {
+    pad: 'bm',
+    init(){
+      tex = C.texture({ type: 'lowpass', freq: 420, Q: 6, vol: 0.5, smooth: 0.06 });
+      C.actions([
+        { label: 'Jiggle', onClick: jiggle },
+        { label: 'Color', ghost: true, onClick: () => { col = (col + 1) % COLORS.length; C.toast(COLORS[col].name); C.noise(0.2, 0.1, 'lowpass', 500, 6, 0, 300); } }
+      ]);
+      build();
+    },
+    resize(){ build(); },
+    down(p){
+      const isIn = inside(p.x, p.y);
+      if (!isIn && edgeDist(p.x, p.y) > 46) return;
+      const ctr = centroid();
+      if (isIn && Math.hypot(p.x - ctr.x, p.y - ctr.y) < R * 0.45) {
+        press = { id: p.id, x: p.x, y: p.y }; presses++;
+        C.noise(0.28, 0.17, 'lowpass', 520, 7, 0, 160); C.buzz(14); return;
+      }
+      const hold = [];
+      for (let i = 0; i < N; i++) { const q = pts[i], d = Math.hypot(q.x - p.x, q.y - p.y); if (d < R * 0.9) hold.push({ i, w: Math.pow(1 - d / (R * 0.9), 2), ox: q.x - p.x, oy: q.y - p.y }); }
+      grabs.set(p.id, { x: p.x, y: p.y, sx: p.x, sy: p.y, hold });
+      C.noise(0.12, 0.13, 'lowpass', 700, 5, 0, 300); C.buzz(8);
+    },
+    move(p){
+      const g = grabs.get(p.id);
+      if (g) { g.x = p.x; g.y = p.y; maxStretch = Math.max(maxStretch, Math.hypot(g.x - g.sx, g.y - g.sy)); C.buzz(5, 120); }
+      if (press && press.id === p.id) { press.x = p.x; press.y = p.y; }
+      if (!g && !(press && press.id === p.id)) return;
+      const speed = Math.hypot(p.vx, p.vy);
+      tex.set(Math.min(1, speed / 14), 240 + Math.min(1300, speed * 70));
+      if (speed > 8 && performance.now() - lastPop > 80 && Math.random() < 0.35) { lastPop = performance.now(); C.noise(0.03, 0.1, 'bandpass', 500 + Math.random() * 900, 9); }
+    },
+    up(p){
+      const g = grabs.get(p.id);
+      if (g) {
+        grabs.delete(p.id); const st = Math.hypot(g.x - g.sx, g.y - g.sy);
+        if (st > 25) { stretches++; C.tone(270, 0.22, 'sine', 0.07, 90); C.noise(0.22, 0.18, 'lowpass', 900, 6, 0, 180); C.buzz(Math.min(40, 10 + st / 8), 0); }
+      }
+      if (press && press.id === p.id) { press = null; C.noise(0.2, 0.15, 'lowpass', 300, 6, 0, 800); C.tone(170, 0.2, 'sine', 0.05, 330); C.buzz(12, 0); }
+      if (!grabs.size && !press) tex.set(0);
+    },
+    update(k){
+      sqv += ((press ? 1 : 0) - squash) * 0.05 * k; sqv *= Math.pow(0.86, k); squash += sqv * k;
+      step(k / 2); step(k / 2);
+    },
+    still(){   // no hands on it, no glitter, and no point has moved a visible amount (0.05 px) since the last picture
+      if (grabs.size || press || COLORS[col].glitter || !drawn || drawn.length !== N * 2) return false;
+      for (let i = 0; i < N; i++) if (Math.abs(pts[i].x - drawn[i * 2]) + Math.abs(pts[i].y - drawn[i * 2 + 1]) > 0.05) return false;
+      return true;
+    },
+    draw(c){
+      const K = COLORS[col];
+      drawn = pts.flatMap(p => [p.x, p.y]);
+      c.drawImage(backdrop, 0, 0, C.W, C.H);
+      const ctr = centroid();
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const p of pts) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
+      c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(ctr.x, maxY + 6, (maxX - minX) * 0.48, 12, 0, 0, Math.PI * 2); c.fill();
+      const bw = maxX - minX, bh = maxY - minY;
+      const g = c.createRadialGradient(minX + bw * 0.32, minY + bh * 0.28, 6, ctr.x, ctr.y, Math.max(bw, bh) * 0.72);
+      g.addColorStop(0, K.a); g.addColorStop(0.55, K.b); g.addColorStop(1, K.c);
+      path(c); c.fillStyle = g; c.fill();
+      c.save(); path(c); c.clip();
+      c.strokeStyle = 'rgba(255,255,255,0.22)'; c.lineWidth = 14; path(c); c.stroke();
+      for (const b of bubbles) { const q = along(b.a, b.f, ctr); c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 1.2; c.beginPath(); c.arc(q.x, q.y, b.s, 0, Math.PI * 2); c.stroke(); }
+      if (K.glitter) {
+        const t = performance.now() / 1000;
+        for (const s of glitter) {
+          const q = along(s.a, s.f, ctr), tw = 0.35 + 0.65 * Math.abs(Math.sin(t * 2 + s.p));
+          c.globalAlpha = tw; c.fillStyle = s.p > 3 ? '#ffffff' : '#ffe9a8';
+          c.fillRect(q.x - s.s / 2, q.y - 0.5, s.s, 1); c.fillRect(q.x - 0.5, q.y - s.s / 2, 1, s.s);
+        }
+        c.globalAlpha = 1;
+      }
+      if (press) {
+        const d = c.createRadialGradient(press.x, press.y + 6, 4, press.x, press.y, 46 + squash * 10);
+        d.addColorStop(0, `rgba(0,0,0,${0.28 * Math.max(0.2, squash)})`); d.addColorStop(1, 'rgba(0,0,0,0)');
+        c.fillStyle = d; c.fillRect(press.x - 70, press.y - 70, 140, 140);
+      }
+      c.restore();
+      c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.ellipse(minX + bw * 0.3, minY + bh * 0.24, bw * 0.12, bh * 0.06, -0.5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.85)'; c.beginPath(); c.arc(minX + bw * 0.42, minY + bh * 0.2, Math.max(2, bw * 0.015), 0, Math.PI * 2); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.18)'; c.lineWidth = 2; path(c); c.stroke();
+    },
+    peek(){
+      let dev = 0; for (const p of pts) dev = Math.max(dev, Math.hypot(p.x - (cx + p.rx), p.y - (cy + p.ry)));
+      return { deformation: Math.round(dev), maxStretch: Math.round(maxStretch), stretches, presses, squash: +squash.toFixed(3), color: COLORS[col].name, grabs: grabs.size, cx, cy, R };
+    }
+  };
+})();
+
+
+// ---------- pointers (multi-touch, with coalesced events for smooth strokes) ----------
+const pointers = new Map();
+function at(e){ const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault(); audio(); Ambient.start(); C.hideHint();
+  try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  const q = at(e), p = { id: e.pointerId, x: q.x, y: q.y, px: q.x, py: q.y, sx: q.x, sy: q.y, vx: 0, vy: 0, t: performance.now(), dist: 0 };
+  pointers.set(e.pointerId, p); if (TOY.down) TOY.down(p);
+});
+cv.addEventListener('pointermove', e => {
+  const p = pointers.get(e.pointerId); if (!p) return; e.preventDefault();
+  const list = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+  for (const ev of (list.length ? list : [e])) {
+    const q = at(ev), now = performance.now(), dt = Math.max(4, now - p.t);
+    p.px = p.x; p.py = p.y; p.x = q.x; p.y = q.y;
+    const dx = p.x - p.px, dy = p.y - p.py; p.dist += Math.hypot(dx, dy);
+    p.vx = p.vx * 0.6 + dx / dt * 16.7 * 0.4; p.vy = p.vy * 0.6 + dy / dt * 16.7 * 0.4; p.t = now;
+    if (TOY.move) TOY.move(p);
+  }
+});
+const lift = e => { const p = pointers.get(e.pointerId); if (!p) return; pointers.delete(e.pointerId); if (TOY.up) TOY.up(p); };
+cv.addEventListener('pointerup', lift); cv.addEventListener('pointercancel', lift);
+cv.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---------- layout + loop ----------
+function measure(){
+  const tb = document.querySelector('.top').getBoundingClientRect(), ab = $('actions');
+  C.top = tb.bottom + 4;
+  C.bottom = ab.children.length ? H - ab.firstElementChild.getBoundingClientRect().top + 8 : 16;
+  if (ready && TOY.resize) TOY.resize();
+  dirty = true;
+}
+// Resolution adapts to the phone: 2x, 1.5x or 1x pixels. A slow phone steps down (live in the first
+// seconds of a toy, otherwise from the next toy on, so nothing you made gets reset); a fast one steps back up.
+let quality = 2, storedQ = null; try { storedQ = localStorage.getItem('calm_quality'); if (storedQ === '0' || storedQ === '1') quality = +storedQ; } catch (e) {}
+if (storedQ === null && /Android/.test(navigator.userAgent) && ((navigator.deviceMemory || 8) <= 3 || (navigator.hardwareConcurrency || 8) <= 4)) quality = 1;   // modest Android phones start at 1.5x
+const setQuality = q => { quality = q; try { localStorage.setItem('calm_quality', String(q)); } catch (e) {} };
+const loadedAt = performance.now(); let ema = 16.7, slowN = 0, fastN = 0, stepped = false;
+function resize(){
+  DPR = Math.min(devicePixelRatio || 1, [1, 1.5, 2][quality]); W = innerWidth; H = innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  measure();
+}
+addEventListener('resize', resize);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) dirty = true;   // the phone may have dropped the canvas while the app was away
+  if (!ac) return;
+  if (document.hidden) { Ambient.stop(); ac.suspend(); } else { ac.resume(); applyToggles(); }
+});
+if (document.fonts) { document.fonts.ready.then(() => { dirty = true; }); if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => { dirty = true; }); }
+let last = 0, drew = true, wasStill = false;
+function frame(ts){
+  requestAnimationFrame(frame);
+  const dt = last ? Math.min(50, ts - last) : 16.7; last = ts;
+  const k = dt / 16.7;
+  if (!document.hidden && drew) {   // only a frame that follows a real draw says how fast this phone is
+    ema = ema * 0.94 + dt * 0.06;
+    slowN = ema > 21 ? slowN + (ema > 28 ? 2 : 1) : Math.max(0, slowN - 2);
+    if (slowN > 45 && quality > 0) { setQuality(quality - 1); slowN = 0; ema = 16.7; stepped = true; if (performance.now() - loadedAt < 6000) resize(); }
+    fastN = ema < 17.5 ? fastN + k : 0;   // counted in 60 Hz frames, so it takes 15 s of smooth running on any screen
+    if (!stepped && fastN > 900 && quality < 2) { setQuality(quality + 1); fastN = 0; stepped = true; }
+  }
+  if (TOY.update) TOY.update(k, dt / 1000);
+  // A toy at rest (no finger down, nothing moving) is drawn once and then left alone until something changes.
+  const still = !pointers.size && !!(TOY.still && TOY.still());
+  drew = !(still && wasStill && !dirty); wasStill = still;
+  if (!drew) return;
+  dirty = false;
+  TOY.draw(ctx);
+}
+resize();
+if (TOY.init) TOY.init();
+ready = true; measure();
+applyToggles();
+requestAnimationFrame(frame);
+window.Calm = { C, TOY, pointers };
+})();
+</script>
+</body>
+</html>

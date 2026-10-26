@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="../../shared/web-audio-unlock.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1d1838">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mimic Manor</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script src="../../shared/kq-i18n/kq-i18n.js"></script>
+<script src="i18n.js"></script>
+</head>
+<body>
+<canvas id="game" aria-label="Mimic Manor game"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="hud-left">
+    <div id="hud-score">0</div>
+    <div id="hud-night">Night 1</div>
+  </div>
+  <div class="hud-mid">
+    <div class="dawn-bar"><div id="dawn-fill"></div><span class="moon"></span><span class="sun"></span></div>
+  </div>
+  <div class="hud-right">
+    <div id="hud-coins"><span class="coin-icon"></span><span id="hud-coin-n">0</span></div>
+    <div class="hud-buttons">
+      <button id="btn-mute" class="icon-btn" aria-label="Sound on or off">♪</button>
+      <button id="btn-pause" class="icon-btn" aria-label="Pause">❚❚</button>
+    </div>
+  </div>
+</div>
+<div id="bottom-hud" class="hidden">
+  <div class="goo"><div id="goo-fill"></div><span>goo</span></div>
+  <button id="btn-mimic" class="mimic-btn" aria-label="Disguise">Mimic</button>
+</div>
+<div id="toast"></div>
+
+<section id="menu" class="panel">
+  <canvas id="menu-art" class="menu-art" width="600" height="240" aria-hidden="true"></canvas>
+  <h1 data-kq-notr>Mimic <span>Manor</span></h1>
+  <p class="tag">Hide-and-seek in a house that rearranges itself every night.</p>
+  <div class="stats">
+    <div><b id="menu-coins">0</b><small>coins (all games)</small></div>
+    <div><b id="menu-best">0</b><small>best</small></div>
+    <div><b id="menu-nights">0</b><small>best night</small></div>
+  </div>
+  <button id="btn-play" class="big-btn">Play</button>
+  <div class="menu-row">
+    <button id="btn-help" class="small-btn">How to play</button>
+    <button id="btn-profile" class="small-btn">Move profile</button>
+    <select data-kq-lang="short" aria-label="Language"></select>
+  </div>
+  <footer>© Known Quantity LLC</footer>
+</section>
+
+<section id="help" class="panel hidden">
+  <h2>How to play</h2>
+  <p class="muted">You're Mimi, a shape-shifting blob. Stay hidden until sunrise.</p>
+  <ul class="help-list">
+    <li><b>Tap the floor</b> to sneak there. Mimi takes the stairs by itself.</li>
+    <li><b>Tap furniture</b> to hide inside. Every use leaves goo smudges, and seekers check smudgy spots first, so mix it up.</li>
+    <li><b>Tap Mimi</b> (or <b>Mimic</b>) to turn into a vase, lamp or plant. It burns goo, and it fails if someone watches you change.</li>
+    <li><b>Creaky boards</b> and <b>tattletale portraits</b> make noise. Seekers come running.</li>
+    <li>The <b>laundry chute</b> drops you from the attic to the cellar in a flash. It's loud, but it washes off your scent.</li>
+    <li><b>Goo</b> runs out while you hide or disguise, and you pop out when it's gone. It refills in the open, and <b>cookies</b> top it up (plus points and coins; golden ones are worth five).</li>
+  </ul>
+  <button class="big-btn" data-close>Got it</button>
+</section>
+
+<section id="nightcard" class="panel hidden">
+  <h2 id="nc-title">Night 1</h2>
+  <p id="nc-sub" class="muted">The manor has rearranged itself.</p>
+  <div id="nc-seekers" class="seekers"></div>
+  <p id="nc-quirk" class="quirk hidden"></p>
+  <button id="btn-go" class="big-btn">Hide!</button>
+</section>
+
+<section id="profile" class="panel hidden">
+  <h2>Move your profile</h2>
+  <p>Copy this code in one Known Quantity game and paste it into another to carry your coins and best scores over. Importing adds to what's already here; it never erases anything.</p>
+  <label>Your code<textarea id="profile-code" readonly rows="3"></textarea></label>
+  <button id="btn-copy" class="small-btn">Copy code</button>
+  <label>Paste a code<textarea id="profile-import" rows="3" placeholder="KQ1:..."></textarea></label>
+  <button id="btn-import" class="small-btn">Import</button>
+  <p id="profile-msg" class="msg"></p>
+  <button class="big-btn" data-close>Done</button>
+</section>
+
+<section id="paused" class="panel hidden">
+  <h2>Paused</h2>
+  <button id="btn-resume" class="big-btn">Resume</button>
+  <button id="btn-quit" class="small-btn">Quit to menu</button>
+</section>
+
+<section id="over" class="panel hidden">
+  <h2 id="over-title">Caught!</h2>
+  <p id="over-sub" class="muted"></p>
+  <div class="final">
+    <div><small>score</small><b id="over-score">0</b></div>
+    <div><small>best</small><b id="over-best">0</b></div>
+    <div><small>nights</small><b id="over-nights">0</b></div>
+  </div>
+  <p id="over-new" class="new-best hidden">New best!</p>
+  <p class="muted">Coins this run: <b id="over-coins">0</b> · Total: <b id="over-total">0</b></p>
+  <button id="btn-revive" class="big-btn alt">Wriggle free (50 coins)</button>
+  <button id="btn-again" class="big-btn">Play again</button>
+  <button id="btn-menu" class="small-btn">Menu</button>
+</section>
+
+<script src="../../shared/kq-profile/kq-profile.js"></script>
+<script src="art.js"></script>
+<script src="audio.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
