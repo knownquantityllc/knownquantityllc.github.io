@@ -2,117 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<script src="../../shared/web-audio-unlock.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#14202a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>Wickwood</title>
-<link rel="stylesheet" href="style.css">
-<script src="../../shared/kq-i18n/kq-i18n.js"></script>
-<script src="i18n.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wickwood: play free in your browser · Gimble Gaming</title>
+<link rel="canonical" href="https://gimblegaming.com/play/wickwood/">
+<meta name="robots" content="noindex">
+<meta name="description" content="Light up a forest the Gloom crept into. Clear rooms, beat bosses, buy new weapons. Free, no ads, no account.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Gimble Gaming">
+<meta property="og:title" content="Wickwood: play free in your browser · Gimble Gaming"><meta property="og:description" content="Light up a forest the Gloom crept into. Clear rooms, beat bosses, buy new weapons. Free, no ads, no account.">
+<meta property="og:url" content="https://gimblegaming.com/play/wickwood/"><meta property="og:image" content="https://gimblegaming.com/og/wickwood.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta http-equiv="refresh" content="0; url=https://gimblegaming.com/play/wickwood/">
+<script>location.replace('https://gimblegaming.com/play/wickwood/' + location.search + location.hash);</script>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#1d1a3f;color:#f7f2e6;font:18px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}a{color:#ffd23f}</style>
 </head>
 <body>
-<canvas id="game" aria-label="Wickwood game"></canvas>
-
-<div id="hud" class="hidden">
-  <div class="hud-left">
-    <div class="hp"><div id="hp-fill"></div><span id="hp-text">100</span></div>
-    <div id="hud-room">Mossdeep 1</div>
-  </div>
-  <div class="hud-right">
-    <div id="hud-coins"><span class="coin-icon"></span><span id="hud-coin-n">0</span></div>
-    <div class="hud-buttons">
-      <button id="btn-mute" class="icon-btn" aria-label="Sound on or off">♪</button>
-      <button id="btn-pause" class="icon-btn" aria-label="Pause">❚❚</button>
-    </div>
-  </div>
-</div>
-<div id="skills" class="hidden">
-  <button id="btn-burst" class="skill burst" aria-label="Glow Burst"><span>Burst</span></button>
-  <button id="btn-dash" class="skill dash" aria-label="Dash"><span>Dash</span></button>
-</div>
-<div id="toast"></div>
-
-<section id="menu" class="panel">
-  <canvas id="hero-portrait" width="160" height="160" aria-hidden="true"></canvas>
-  <h1 data-kq-notr>Wickwood</h1>
-  <p class="tagline">The Gloom has crept into the forest. Light it back up, one room at a time.</p>
-  <div class="stats">
-    <div><b><span class="coin-icon"></span> <span id="menu-coins">0</span></b><small>coins (all games)</small></div>
-    <div><b id="menu-best">0</b><small>best glow</small></div>
-  </div>
-  <h2>Where to?</h2>
-  <div id="areas" class="areas"></div>
-  <button id="btn-upgrades" class="big-btn alt">Forge &amp; Skills</button>
-  <div class="menu-row">
-    <button id="btn-help" class="small-btn">How to play</button>
-    <button id="btn-profile" class="small-btn">Move profile</button>
-    <select data-kq-lang="short" aria-label="Language"></select>
-  </div>
-  <footer>© Known Quantity LLC</footer>
-</section>
-
-<section id="upgrades" class="panel hidden">
-  <div class="up-head">
-    <h2>Forge &amp; Skills</h2>
-    <div class="up-coins"><span class="coin-icon"></span> <b id="up-coins">0</b></div>
-  </div>
-  <div class="tabs" role="tablist">
-    <button class="tab" role="tab" data-tab="weapons" aria-selected="true">Weapons</button>
-    <button class="tab" role="tab" data-tab="skillz" aria-selected="false">Skills</button>
-  </div>
-  <div id="up-list" class="up-list"></div>
-  <button class="big-btn" data-close>Back to camp</button>
-</section>
-
-<section id="help" class="panel hidden">
-  <h2>How to play</h2>
-  <ul class="help-list">
-    <li><b>Drag anywhere</b> to walk Wick around (or WASD / arrow keys).</li>
-    <li>Your weapon <b>fires by itself</b> at the closest Gloom creature.</li>
-    <li><b>Dash</b> (Space) zips you forward and nothing can hurt you mid-dash.</li>
-    <li><b>Burst</b> (E) blasts every Gloom near you. Learn it in the Forge.</li>
-    <li>Clear a room and the <b>glowing gate</b> opens at the top. Walk in to go deeper.</li>
-    <li>Beat the boss at the end of an area to unlock the next one.</li>
-    <li>Coins you pick up are yours to keep, even if the Gloom gets you. Spend them on new weapons and skills, or in any other Known Quantity game.</li>
-  </ul>
-  <button class="big-btn" data-close>Got it</button>
-</section>
-
-<section id="profile" class="panel hidden">
-  <h2>Move your profile</h2>
-  <p>Copy this code in one Known Quantity game and paste it into another to carry your coins and best scores over. Importing adds to what's already here; it never erases anything.</p>
-  <label>Your code<textarea id="profile-code" readonly rows="3"></textarea></label>
-  <button id="btn-copy" class="small-btn">Copy code</button>
-  <label>Paste a code<textarea id="profile-import" rows="3" placeholder="KQ1:..."></textarea></label>
-  <button id="btn-import" class="small-btn">Import</button>
-  <p id="profile-msg" class="msg"></p>
-  <button class="big-btn" data-close>Done</button>
-</section>
-
-<section id="paused" class="panel hidden">
-  <h2>Paused</h2>
-  <button id="btn-resume" class="big-btn">Resume</button>
-  <button id="btn-quit" class="big-btn alt">Back to camp</button>
-  <p class="muted small">Coins you've picked up are saved when you leave.</p>
-</section>
-
-<section id="result" class="panel hidden">
-  <h2 id="result-title">The Gloom got you</h2>
-  <p id="result-sub" class="muted"></p>
-  <div class="final">
-    <div><b id="result-score">0</b><small>glow</small></div>
-    <div><b><span class="coin-icon"></span> <span id="result-coins">0</span></b><small>coins found</small></div>
-  </div>
-  <div id="result-best" class="new-best hidden">New best!</div>
-  <button id="btn-again" class="big-btn">Try again</button>
-  <button id="btn-camp" class="big-btn alt">Back to camp</button>
-</section>
-
-<script src="../../shared/kq-profile/kq-profile.js"></script>
-<script src="audio.js"></script>
-<script src="data.js"></script>
-<script src="draw.js"></script>
-<script src="game.js"></script>
+<p>Our games now live at <a href="https://gimblegaming.com/play/wickwood/">gimblegaming.com</a>.</p>
 </body>
 </html>

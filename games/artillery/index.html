@@ -1,158 +1,21 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script src="../../shared/web-audio-unlock.js"></script>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="#140b2e">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Volley Valley</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="../../shared/kq-i18n/kq-i18n.js"></script>
-  <script src="js/i18n.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Volley Valley: play free in your browser · Gimble Gaming</title>
+<link rel="canonical" href="https://gimblegaming.com/play/volley-valley/">
+<meta name="robots" content="noindex">
+<meta name="description" content="Aim, lob and blast the other side of the hill. Then do it to a friend. Free, no ads, no account.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Gimble Gaming">
+<meta property="og:title" content="Volley Valley: play free in your browser · Gimble Gaming"><meta property="og:description" content="Aim, lob and blast the other side of the hill. Then do it to a friend. Free, no ads, no account.">
+<meta property="og:url" content="https://gimblegaming.com/play/volley-valley/"><meta property="og:image" content="https://gimblegaming.com/og/volley-valley.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta http-equiv="refresh" content="0; url=https://gimblegaming.com/play/volley-valley/">
+<script>location.replace('https://gimblegaming.com/play/volley-valley/' + location.search + location.hash);</script>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#1d1a3f;color:#f7f2e6;font:18px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}a{color:#ffd23f}</style>
 </head>
 <body>
-  <div id="app">
-    <!-- Menu -->
-    <section id="menu" class="screen">
-      <header class="menu-top">
-        <div>
-          <h1 data-kq-notr>Volley Valley</h1>
-          <p class="sub">Aim, lob, and blast the other side of the hill.</p>
-        </div>
-        <div class="menu-tools">
-          <span class="chip" id="coinChip" title="Coins shared across Known Quantity games"><i class="coin" aria-hidden="true"></i><b id="coinCount">0</b></span>
-          <span class="chip" id="bestChip" title="Best score"><small>Best</small> <b id="bestScore">0</b></span>
-          <button class="icon-btn" id="muteBtn" aria-label="Sound on or off"></button>
-        </div>
-      </header>
-
-      <h2 class="label">Pick a world</h2>
-      <div class="skins" id="skinList" role="radiogroup" aria-label="World"></div>
-
-      <div class="row-opts">
-        <div>
-          <h2 class="label">Computer skill</h2>
-          <div class="seg" id="diffSeg">
-            <button data-v="easy">Easy</button><button data-v="medium" class="on">Medium</button><button data-v="hard">Hard</button>
-          </div>
-        </div>
-        <div>
-          <h2 class="label">Shots each</h2>
-          <div class="seg" id="roundSeg">
-            <button data-v="5">5</button><button data-v="10" class="on">10</button><button data-v="15">15</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="modes">
-        <button class="big primary" id="playCpu">Play the computer</button>
-        <button class="big" id="playLocal">Pass &amp; play</button>
-        <button class="big" id="playOnline">Play a friend online</button>
-      </div>
-      <p class="fine">A Known Quantity game</p>
-        <p class="fine"><select data-kq-lang aria-label="Language"></select></p>
-    </section>
-
-    <!-- Online setup -->
-    <section id="online" class="screen hidden">
-      <header class="menu-top">
-        <button class="icon-btn" data-back aria-label="Back">←</button>
-        <h1 class="h1-sm">Play a friend online</h1>
-        <span></span>
-      </header>
-      <div class="seg wide" id="onlineTabs">
-        <button data-v="host" class="on">Start a match</button><button data-v="join">Join a match</button>
-      </div>
-
-      <div id="hostPane" class="pane">
-        <ol class="steps">
-          <li>
-            <p>Make an invite and send it to your friend (text, chat, email, anything).</p>
-            <button class="big primary" id="makeInvite">Make invite</button>
-            <div class="codebox hidden" id="inviteBox">
-              <textarea id="inviteCode" readonly rows="3"></textarea>
-              <div class="btnrow"><button id="copyInvite">Copy</button><button id="shareInvite">Share</button></div>
-            </div>
-          </li>
-          <li>
-            <p>Your friend opens it and sends you back a reply code. Paste it here.</p>
-            <textarea id="replyIn" rows="3" placeholder="Paste reply code"></textarea>
-            <button class="big" id="connectBtn">Connect</button>
-          </li>
-        </ol>
-      </div>
-
-      <div id="joinPane" class="pane hidden">
-        <ol class="steps">
-          <li>
-            <p>Paste the invite your friend sent you (or just open their invite link).</p>
-            <textarea id="joinIn" rows="3" placeholder="Paste invite"></textarea>
-            <button class="big primary" id="makeReply">Make reply</button>
-          </li>
-          <li>
-            <p>Send this reply code back to your friend. The game starts when they paste it.</p>
-            <div class="codebox hidden" id="replyBox">
-              <textarea id="replyCode" readonly rows="3"></textarea>
-              <div class="btnrow"><button id="copyReply">Copy</button><button id="shareReply">Share</button></div>
-            </div>
-          </li>
-        </ol>
-      </div>
-      <p class="status" id="netStatus"></p>
-      <p class="fine">Direct phone-to-phone link, no account or server. Some strict networks (certain mobile carriers or work Wi-Fi) block it; try Wi-Fi if it won't connect.</p>
-    </section>
-
-    <!-- Game -->
-    <section id="play" class="screen hidden">
-      <div class="hud">
-        <button class="icon-btn small" id="quitBtn" aria-label="Menu">☰</button>
-        <div class="pl" id="hud0"><img class="em" alt=""><div class="pinfo"><span class="nm"></span><div class="bar"><i></i></div></div><span class="sc"></span></div>
-        <div class="mid"><div id="roundTxt"></div><div id="windTxt"></div></div>
-        <div class="pl right" id="hud1"><span class="sc"></span><div class="pinfo"><span class="nm"></span><div class="bar"><i></i></div></div><img class="em" alt=""></div>
-      </div>
-      <div class="stage" id="stage"><canvas id="cv"></canvas><div class="toast hidden" id="toast"></div></div>
-      <div class="controls" id="controls">
-        <button class="weapon-btn" id="weaponBtn"><img alt=""><span class="wn"></span><span class="wa"></span></button>
-        <div class="dial"><span class="dl">Angle</span><button data-adj="angle" data-d="1" aria-label="Tilt left">↶</button><b id="angleVal">0</b><button data-adj="angle" data-d="-1" aria-label="Tilt right">↷</button></div>
-        <div class="dial"><span class="dl">Power</span><button data-adj="power" data-d="-1" aria-label="Less power">−</button><b id="powerVal">0</b><button data-adj="power" data-d="1" aria-label="More power">+</button></div>
-        <div class="dial move"><span class="dl">Move <i id="movesVal"></i></span><button id="moveL" aria-label="Move left">◀</button><button id="moveR" aria-label="Move right">▶</button></div>
-        <button class="fire" id="fireBtn">FIRE</button>
-      </div>
-      <div class="sheet hidden" id="weaponSheet">
-        <div class="sheet-card">
-          <div class="sheet-head"><b>Pick a shot</b><button class="icon-btn small" id="closeSheet" aria-label="Close">✕</button></div>
-          <div class="wgrid" id="weaponGrid"></div>
-        </div>
-      </div>
-      <div class="rotate hidden" id="rotateHint">
-        <svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true"><rect x="20" y="8" width="24" height="44" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><path d="M50 40a18 18 0 0 1-14 14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M36 50l0 5 5 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <p>Turn your phone sideways to see the whole valley.</p>
-        <button class="big" id="rotateGo">Play upright</button>
-      </div>
-      <div class="overlay hidden" id="overlay">
-        <div class="card">
-          <div class="winner-pics" id="ovEmoji"></div>
-          <h2 id="ovTitle"></h2>
-          <p id="ovText"></p>
-          <div class="reward" id="ovReward"></div>
-          <div class="btnrow">
-            <button class="big primary" id="rematchBtn">Play again</button>
-            <button class="big" id="menuBtn">Menu</button>
-          </div>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Shared Known Quantity profile (coins + best scores across games). -->
-  <script src="../../shared/kq-profile/kq-profile.js" onerror="void 0"></script>
-  <script src="js/profile-fallback.js"></script>
-  <script src="js/art.js"></script>
-  <script src="js/skins.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/engine.js"></script>
-  <script src="js/net.js"></script>
-  <script src="js/main.js"></script>
+<p>Our games now live at <a href="https://gimblegaming.com/play/volley-valley/">gimblegaming.com</a>.</p>
 </body>
 </html>
